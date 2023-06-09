@@ -3,7 +3,7 @@ import tweepy
 import logging
 import json 
 from decouple import config
-from KEYS import *
+from KEYS import bearerToken
 
 logging.basicConfig(level=logging.INFO)
 DEFAULT_THRESHOLD = 10
@@ -25,23 +25,24 @@ topic_names = [
 #     producer = KafkaProducer(bootstrap_servers="localhost:9092")
 #     return producer
     
-def authTwitter():
-    auth = tweepy.OAuthHandler(consumerKey, consumerSecretKey)
-    auth.set_access_token(accessToken, accessSecret)
-    api = tweepy.API(auth, wait_on_rate_limit=True)
-    return api 
+# def authTwitter():
+#     auth = tweepy.OAuthHandler(consumerKey, consumerSecretKey)
+#     auth.set_access_token(accessToken, accessSecret)
+#     api = tweepy.API(auth, wait_on_rate_limit=True)
+#     return api 
 
-class TweetListener(tweepy.StreamingClient):
+class TweetListener(tweepy.Stream):
     def __init__(self, bearer_token, threshold, topic_names):
         super().__init__(bearer_token)
+        self.bearer_token = bearer_token
         self.threshold = threshold
         # self.producer = producer
         self.topic_names = topic_names
         self.tweets = []
     
     # receiving data from API
-    def on_data(self, unfiltered_data):
-        tweet = json.loads(unfiltered_data)
+    def on_data(self, raw_data):
+        tweet = json.loads(raw_data)
         if tweet["data"]:
             # we care about the message
             data = {
@@ -64,4 +65,4 @@ class TweetListener(tweepy.StreamingClient):
 
 if __name__ == "__main__":
     stream = TweetListener(bearerToken, DEFAULT_THRESHOLD, topic_names)
-    stream.filter(track=topic_names) #filter to get messages with certain wordss
+    stream.filter()
